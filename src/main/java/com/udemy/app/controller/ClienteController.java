@@ -95,13 +95,16 @@ public class ClienteController {
 		
 		//Guardar la foto en una ruta
 		if(!foto.isEmpty()) {
-			Path directorioRecursos =Paths.get("src//main/resources/static/uploads");			
-			String rootPath = directorioRecursos.toFile().getAbsolutePath();
+			//Guardar la imagen en una carpeta dentor del proyecto
+			//Path directorioRecursos =Paths.get("src//main/resources/static/uploads");			
+			//String rootPath = directorioRecursos.toFile().getAbsolutePath();
+			
+			String rootPath = "c://img";
 			try {
 				//obtenemos los bytes del la img
 				byte[] bytes = foto.getBytes();
 				//Crea la uta completa con el nombre del file
-				Path rutaCompleta = Paths.get(rootPath+"//"+foto.getOriginalFilename());
+				Path rutaCompleta = Paths.get(rootPath+"/"+foto.getOriginalFilename());
 				//Escribir el directorio en la ruta
 				Files.write(rutaCompleta, bytes);
 				flash.addFlashAttribute("info", "Has subido correctamente la foto "+foto.getOriginalFilename());
