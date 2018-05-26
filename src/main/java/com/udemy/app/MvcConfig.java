@@ -12,6 +12,7 @@ public class MvcConfig extends 	WebMvcConfigurerAdapter{
 	 * Agrega la ruta del recurso a mostrar al cliente
 	 * y el recurso interno proyecto
 	 */
+	/*
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
 		// TODO Auto-generated method stub
@@ -19,7 +20,7 @@ public class MvcConfig extends 	WebMvcConfigurerAdapter{
 		registry.addResourceHandler("/uploads/**")
 		.addResourceLocations("file:/c:/img/");
 		
-	}
+	}*/
 
 	
 }
