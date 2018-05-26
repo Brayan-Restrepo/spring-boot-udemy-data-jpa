@@ -1,9 +1,6 @@
 package com.udemy.app.controller;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -12,7 +9,6 @@ import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +29,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.udemy.app.models.entity.Cliente;
 import com.udemy.app.models.service.IClienteService;
+import com.udemy.app.models.service.IUploadFileService;
 import com.udemy.app.util.paginator.PageRender;
 
 /**
@@ -51,6 +48,8 @@ public class ClienteController {
 	 */
 	@Autowired
 	private IClienteService iClienteService;
+	@Autowired
+	private IUploadFileService iUploadFileService;
 	
 	@GetMapping(value="/ver/{id}")
 	public String ver(@PathVariable(value="id") Long id, Map<String, Object> model, RedirectAttributes flash) {
@@ -97,21 +96,8 @@ public class ClienteController {
 	 */
 	@GetMapping(value="/uploads/{filename:.+}")
 	public ResponseEntity<Resource> verFoto(@PathVariable String filename){
-		Path pathFoto = Paths.get("uploads").resolve(filename).toAbsolutePath();
 		
-		Resource recurso = null;
-		 
-		try {
-			recurso = new UrlResource(pathFoto.toUri());
-			// Si no existe o si no es leeible sale una exception
-			if(!recurso.exists()) {
-				throw new RuntimeException("Error no se puede cargar la imagen: "+pathFoto.toString());
-			}
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+		Resource recurso = iUploadFileService.ver(filename);
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachmen; filename=\""+recurso.getFilename()+"\"")
 				.body(recurso);
@@ -132,34 +118,10 @@ public class ClienteController {
 			if(cliente.getId() != null 
 					&& cliente.getId() > 0 
 					&& cliente.getFoto() != null ) {
-				
-				Path path = Paths.get("uploads").resolve(cliente.getFoto()).toAbsolutePath();
-				File file = path.toFile();
-				if(file.isFile() && file.exists()) {
-					System.err.println("--->"+file.getAbsolutePath());
-					file.delete();
-				}
+				this.iUploadFileService.delete(cliente.getFoto());
 			}
-			
-			//Guardar la imagen en una carpeta dentor del proyecto
-			//Path directorioRecursos =Paths.get("src//main/resources/static/uploads");			
-			//String rootPath = directorioRecursos.toFile().getAbsolutePath();
-			
-			String rootPath = Paths.get("uploads").toAbsolutePath().toString();
-			try {
-				//obtenemos los bytes del la img
-				byte[] bytes = foto.getBytes();
-				//Crea la uta completa con el nombre del file
-				Path rutaCompleta = Paths.get(rootPath+"/"+foto.getOriginalFilename());
-				//Escribir el directorio en la ruta
-				Files.write(rutaCompleta, bytes);
-				flash.addFlashAttribute("info", "Has subido correctamente la foto "+foto.getOriginalFilename());
-				//Le pasa el nombre de la foto al cliente
-				cliente.setFoto(foto.getOriginalFilename());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			this.iUploadFileService.guardar(foto);			
+			cliente.setFoto(foto.getOriginalFilename());
 		}
 		
 		this.iClienteService.save(cliente);
@@ -194,18 +156,9 @@ public class ClienteController {
 			
 			this.iClienteService.delete(id);
 			flash.addFlashAttribute("success", "Cliente eliminado");
-			
-			Path path = Paths.get("uploads").resolve(cliente.getFoto()).toAbsolutePath();
-			File file = path.toFile();
-			
-			if(file.exists()) {
-				if(file.delete()) {
-					flash.addFlashAttribute("info", "Foto "+cliente.getFoto()+" Eliminada");					
-				}else {
-						flash.addFlashAttribute("info", "No se Foto "+cliente.getFoto()+" Eliminada");
-				}
-			}else{
-				flash.addFlashAttribute("info", "read Foto "+cliente.getFoto()+" Eliminada");
+						
+			if(this.iUploadFileService.delete(cliente.getFoto())) {
+				flash.addFlashAttribute("info", "Foto "+cliente.getFoto()+" Eliminada");					
 			}
 		}
 		return "redirect:/listar";
